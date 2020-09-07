@@ -63,8 +63,8 @@ IsoNN_arg.add_argument('--init_lr', type=float, default=1e-3,
                        help='Initial learning rate value')
 
                                                                   
-IsoNN_arg.add_argument('--random_seed', type=int, default=1, # fold1&2(?)&3(fast?)/2, fold2&3/1 HIV_DTI_3_fold   ### BP_fMRI_3_fold fold2/4  fold1&3/1
-                      help='Seed to ensure reproducibility')#ADHD_fMRI_3_fold
+IsoNN_arg.add_argument('--random_seed', type=int, default=1, 
+                      help='Seed to ensure reproducibility')
 
 IsoNN_arg.add_argument('--data_dir', type=str, default='../../data/kdd17/ADHD_fMRI_3_fold',
                       help='Directory in which data is stored')
