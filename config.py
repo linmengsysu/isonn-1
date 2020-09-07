@@ -52,7 +52,7 @@ IsoNN_arg.add_argument('--shuffle', type=str2bool, default=True,
 IsoNN_arg.add_argument('--show_sample', type=str2bool, default=False,
                       help='Whether to visualize a sample grid of the data')
 
-IsoNN_arg.add_argument('--train_patience', type=int, default=1000,
+IsoNN_arg.add_argument('--train_patience', type=int, default=100,
                        help='Number of epochs to wait before stopping train')
 
 
@@ -63,8 +63,8 @@ IsoNN_arg.add_argument('--init_lr', type=float, default=1e-3,
                        help='Initial learning rate value')
 
                                                                   
-IsoNN_arg.add_argument('--random_seed', type=int, default=1, 
-                      help='Seed to ensure reproducibility')
+IsoNN_arg.add_argument('--random_seed', type=int, default=1, # fold1&2(?)&3(fast?)/2, fold2&3/1 HIV_DTI_3_fold   ### BP_fMRI_3_fold fold2/4  fold1&3/1
+                      help='Seed to ensure reproducibility')#ADHD_fMRI_3_fold
 
 IsoNN_arg.add_argument('--data_dir', type=str, default='../../data/kdd17/ADHD_fMRI_3_fold',
                       help='Directory in which data is stored')
@@ -76,7 +76,7 @@ IsoNN_arg.add_argument('--ckpt_dir', type=str, default='../../result/expIsoNN/ck
 IsoNN_arg.add_argument('--fold_count', type=str, default='1',
                       help='which fold is chosen')
 
-IsoNN_arg.add_argument('--result_dir', type=str, default='../../result/expRecurrent_Graph_Model/',
+IsoNN_arg.add_argument('--result_dir', type=str, default='../../result/expIsoNN/',
                       help='Directory in which result will be stored')
 
 IsoNN_arg.add_argument('--no-cuda', action='store_true', default=False, help='Disables CUDA training.')
