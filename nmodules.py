@@ -30,45 +30,24 @@ class Isomorphic_Feature_Extraction(nn.Module):
         self.avgpool = nn.AvgPool2d((2, 2), stride=(1, 1))
         self.n_subgraph = (nodes - self.k + 1) ** 2 
         self.n_input = self.n_subgraph
-        self.e = 0
-        
-        self.biases = nn.Parameter(torch.randn(self.c))
-        # self.fc = nn.Linear(n_input, n_hid)
-        
 
     def forward(self, x):
-        self.e += 1
         # layer = self.FastIsoLayerWithP(x, self.kernel)
         layer = self.IsoLayer(x, self.kernel) # [B, n_subgraph, c]
-        maximum = torch.max(layer, dim=2, keepdim=True)[0]
-        minimum = torch.min(layer, dim=2, keepdim=True)[0]
-        # print('minimum, maximum', minimum[0], maximum.size())
-        # plt.clf()
-        # plt.hist(layer.cpu().detach().numpy().reshape(-1)) 
-        # plt.title("Histogram with 'auto' bins")
-        # plt.savefig('plots/layer_historgram.pdf')
-
         H = int(np.sqrt(self.n_subgraph))
-        # layer = (1 - (layer - minimum)/(maximum - minimum)).transpose(2,1) # [B, c, n_subgraph]  
-        if self.c >= 1:
-            layer =  F.softmax(-layer, dim=1).transpose(2,1)
+        if self.c == 1:
+            layer = F.softmax(-layer, dim=1).transpose(2, 1)
             print('subgraph softmax')
-        else:
-            layer =  F.softmax(-layer, dim=2).transpose(2,1)
-            # print('channel softmax')
+        elif self.c > 1:
+            layer =  F.softmax(-layer, dim=2).transpose(2, 1)
+            print('channel softmax')
         # print('layer', layer.size())
 
         layer = layer.view(-1, self.c, H, H)
-        # print('self.kernel', self.kernel.detach().cpu())
-        # f = open('kernel','wb')
-        # pickle.dump(self.kernel.detach().cpu(), f)
-        # f.close()
-        # layer = self.avgpool(layer)
-        # print('avg pool layer', layer.size())
-        plt.clf()
-        plt.hist(layer.cpu().detach().numpy().reshape(-1)) 
-        plt.title("softmax subgraphs Histogram with 'auto' bins")
-        plt.savefig('plots/subgraph_normalized_layer_historgram.pdf')
+        # plt.clf()
+        # plt.hist(layer.cpu().detach().numpy().reshape(-1))
+        # plt.title("softmax subgraphs Histogram with 'auto' bins")
+        # plt.savefig('plots/subgraph_normalized_layer_historgram.pdf')
         return layer, self.kernel
 
     def IsoLayer(self, x, kernel):
@@ -95,13 +74,9 @@ class Isomorphic_Feature_Extraction(nn.Module):
         
         B, n_subgraph, c_prev, k, k = x.size()
         x = x.view(-1, self.k, self.k)
-        P = self.compute_p(x, kernel)# P [B*n_subgraph, c, k, k] 
-        # print('P size', P.size())
+        P = self.compute_p(x, kernel)# P [B*n_subgraph, c, k, k]
         x = x.view(-1, 1, self.k, self.k)
-        # print('x size', x.size(),torch.matmul(P, kernel).size(),torch.transpose(P, 2, 1).size())
-        # print(torch.matmul(torch.matmul(P, kernel), torch.transpose(P, 2, 1)).size())
-        tmp = torch.matmul(torch.matmul(P, kernel), torch.transpose(P, 3, 2)) - x #[B*n_subgraph, 1, k, k] - [B*n_subgraph, c, k, k] 
-        # print('tmp size', tmp.size())
+        tmp = torch.matmul(torch.matmul(P, kernel), torch.transpose(P, 3, 2)) - x #[B*n_subgraph, 1, k, k] - [B*n_subgraph, c, k, k]
         features = torch.norm(tmp, p='fro', dim=(-2,-1)) ** 2
         features = features.view(B, n_subgraph, self.c)
         return features
@@ -181,9 +156,6 @@ class Classification_Component(nn.Module):
         h2 = F.dropout(h2, self.dropout, training=self.training)
         pred = F.log_softmax(self.fc3(h2), dim=1)
         return pred
-
-
-
 
 
 
