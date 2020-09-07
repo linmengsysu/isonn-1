@@ -11,4 +11,5 @@
 
 ## How to run the model
 
-‘’‘python main.py ’‘’
+'''bash
+python main.py '''
