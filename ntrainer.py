@@ -64,11 +64,9 @@ class Trainer(object):
         self.best = False#False #True
         
         self.train_loader = data_loader[0]
-        self.valid_loader = test_loader#data_loader[1]
+        # self.valid_loader = test_loader
         self.num_train = len(self.train_loader.sampler.indices)
-        self.num_valid = 0#len(self.valid_loader.sampler.indices)
-     
-        
+
         self.test_loader = test_loader
         self.num_test = len(self.test_loader.dataset)
         print('self.num_train', self.num_train, 'self.num_test',self.num_test)
@@ -78,13 +76,11 @@ class Trainer(object):
         self.start_epoch = 0
        
         self.lr = config.init_lr
-        self.best_valid_acc = 0
-        self.best_valid_f1 = 0
+        # self.best_valid_acc = 0
+        # self.best_valid_f1 = 0
         self.train_patience = config.train_patience
 
-        
-
-        self.plot_dir = '../../result/expIsoNN/ADHD/fold_' + str(self.fold_count) + '_dropout_' + str(self.dropout) + '_k_' + str(self.k) + '_c_' + str(self.c) + '_epoch_' + str(self.epochs)
+        # self.plot_dir = '../../result/expIsoNN/ADHD/fold_' + str(self.fold_count) + '_dropout_' + str(self.dropout) + '_k_' + str(self.k) + '_c_' + str(self.c) + '_epoch_' + str(self.epochs)
         self.ckpt_dir = config.ckpt_dir
 
         self.model_name = 'IsoNN_k_{}_c_{}'.format(
@@ -115,78 +111,10 @@ class Trainer(object):
                 '\nEpoch: {}/{} - LR: {:.6f}'.format(
                     epoch+1, self.epochs, self.lr)
             )
-
             # train for 1 epoch
             self.model.train()
             train_loss, train_acc = self.train_one_epoch(epoch)
             train_scores.append([train_loss, train_acc])
-
-
-            # self.model.eval()
-            # valid_acc, valid_f1 = self.validate(epoch)
-            # valid_acc = 0
-            # valid_f1 = 0
-            # result = self.test()
-            
-            # scores.append([valid_acc, valid_f1])
-            # # msg = "train loss: {:.3f} - train acc: {:.3f} "
-            # # print(msg.format(train_loss, train_acc))
-            # is_best = valid_acc > self.best_valid_acc
-            # msg1 = "train loss: {:.3f} - train acc: {:.3f} "
-            # msg2 = "- val acc: {:.3f} - val f1: {:.3f}"
-            # if is_best:
-            #     self.counter = 0
-            #     msg2 += " [*]"
-            # msg = msg1 + msg2
-            # print(msg.format(train_loss, train_acc, valid_acc, valid_f1))
-
-            # # check for improvement
-            # if not is_best:
-            #     self.counter += 1
-            # if self.counter > self.train_patience:
-            #     print("[!] No improvement in a while, stopping training.")
-            #     break
-            # self.best_valid_acc = max(valid_acc, self.best_valid_acc)
-            # self.save_checkpoint(
-            #     {'epoch': epoch + 1,
-            #      'model_state': self.model.state_dict(),
-            #      'optim_state': self.optimizer.state_dict(),
-            #      'best_valid_acc': self.best_valid_acc,
-            #      }, is_best
-            # )
-
-            
-        # elapsed = time.time() - start
-        # scores = np.array(scores)
-        # train_scores = np.array(train_scores)
-        # plt.figure()
-        # plt.plot(np.arange(len(train_scores)), train_scores[:,0], 'o--', color='tab:blue', linewidth=2, label='loss')
-        
-        # plt.tick_params(axis='y', labelsize=14)
-        # plt.tick_params(axis='x', labelsize=14)
-        # plt.ylabel('Loss', fontsize=16)
-        # plt.xlabel('Epoch Number', fontsize=16)
-        # plt.legend(prop={'size': 14})
-        # plt.savefig(self.plot_dir + '_loss.pdf')
-        # plt.clf()
-        
-        # plt.plot(np.arange(len(scores)), scores[:,0], 'o--', color='tab:blue', linewidth=2, label='Acc')
-        # plt.plot(np.arange(len(scores)), scores[:,1],'*--', color='tab:orange', linewidth=2, label='F1')
-        # plt.plot(np.arange(len(scores)), train_scores[:,1],'v--', color='tab:green', linewidth=2, label='TrainAcc')
-       
-
-        # plt.tick_params(axis='y', labelsize=14)
-        # plt.tick_params(axis='x', labelsize=14)
-        # # plt.ylabel('Loss', fontsize=16)
-        # plt.xlabel('Epoch Number', fontsize=16)
-        # plt.legend(prop={'size': 14})
-        # plt.savefig(self.plot_dir + '_test_performance.pdf')
-        # plt.clf()
-
-        # f = open(self.plot_dir + '_all_scores', 'wb')
-        # ss = {'train-loss-acc': train_scores, 'test-acc-f1': scores}
-        # pickle.dump(ss,f)
-        # f.close()
 
     def train_one_epoch(self, epoch):
         """
@@ -202,7 +130,6 @@ class Trainer(object):
         accs = AverageMeter()
         f1s = AverageMeter()
         recalls = AverageMeter()
-        aucs = AverageMeter()
         precisions = AverageMeter()
 
         tic = time.time()
@@ -230,74 +157,14 @@ class Trainer(object):
                 
                 # compute gradients and update SGD
                 self.optimizer.zero_grad()
-             
                 loss.backward()
-
                 self.optimizer.step()
 
                 # measure elapsed time
                 toc = time.time()
                 batch_time.update(toc-tic)
-
                 pbar.update(self.batch_size)
-
-       
         return losses.avg, accs.avg
-
-
-
-    def validate(self, epoch):
-        """
-        Evaluate the model on the validation set.
-        """
-        correct = 0
-        losses = AverageMeter()
-        accs = AverageMeter()
-        f1s = AverageMeter()
-        recalls = AverageMeter()
-        aucs = AverageMeter()
-        precisions = AverageMeter()
-        self.model.eval()
-      
-        for i, (x, y) in enumerate(self.valid_loader):
-            x, y = Variable(x), Variable(y)
-            if self.cuda:
-                x, y = x.cuda(), y.cuda()
-            # duplicate 10 times
-            x = x.repeat(self.M, 1, 1, 1)
-            probas = self.model(x)
-            
-            probas = probas.view(
-                self.M, -1, probas.shape[-1]
-            )
-            probas = torch.mean(probas, dim=0)
-
-            predicted = probas.data.max(1, keepdim=True)[1]
-
-            loss = F.nll_loss(probas, y)
-
-            acc = accuracy_score(y.cpu(), predicted.cpu())
-            f1 = f1_score(y.cpu(), predicted.cpu())
-            prec = precision_score(y.cpu(), predicted.cpu())
-            rec = recall_score(y.cpu(), predicted.cpu())
-
-
-            losses.update(loss.data.item(), x.size()[0])
-            accs.update(acc, x.size()[0])
-            f1s.update(f1, x.size()[0],)
-            recalls.update(rec, x.size()[0])
-            precisions.update(prec, x.size()[0])
-                
-              
-
-        print('k, c, dropout', self.k, self.c, self.dropout)
-        print('Accuracy:', accs.avg)
-        print('F1: ', f1s.avg)
-        print('Precision: ', precisions.avg)
-        print('Recall: ', recalls.avg)
-
-        # result = [accs.avg, f1s.avg, precisions.avg, recalls.avg]
-        return accs.avg, f1s.avg
 
     def test(self):
         """
@@ -310,7 +177,6 @@ class Trainer(object):
         accs = AverageMeter()
         f1s = AverageMeter()
         recalls = AverageMeter()
-        aucs = AverageMeter()
         precisions = AverageMeter()
         self.model.eval()
         with torch.no_grad():
@@ -326,9 +192,7 @@ class Trainer(object):
                     self.M, -1, probas.shape[-1]
                 )
                 probas = torch.mean(probas, dim=0)
-
                 predicted = probas.data.max(1, keepdim=True)[1]
-
 
                 acc = accuracy_score(y.cpu(), predicted.cpu())
                 f1 = f1_score(y.cpu(), predicted.cpu())
@@ -339,8 +203,6 @@ class Trainer(object):
                 f1s.update(f1)
                 recalls.update(rec)
                 precisions.update(prec)
-                
-              
 
         print('k, c, dropout', self.k, self.c, self.dropout)
         print('Accuracy:', accs.avg)
@@ -350,67 +212,4 @@ class Trainer(object):
 
         result = [accs.avg, f1s.avg, precisions.avg, recalls.avg]
         return result
-
-    def save_checkpoint(self, state, is_best):
-        """
-        Save a copy of the model so that it can be loaded at a future
-        date. This function is used when the model is being evaluated
-        on the test data.
-
-        If this model has reached the best validation accuracy thus
-        far, a seperate file with the suffix `best` is created.
-        """
-        # print("[*] Saving model to {}".format(self.ckpt_dir))
-
-        filename = self.model_name + '_ckpt.pth.tar'
-        ckpt_path = os.path.join(self.ckpt_dir, filename)
-        torch.save(state, ckpt_path)
-
-        if is_best:
-            filename = self.model_name + '_model_best.pth.tar'
-            shutil.copyfile(
-                ckpt_path, os.path.join(self.ckpt_dir, filename)
-            )
-
-
-    def load_checkpoint(self, best=False):
-        """
-        Load the best copy of a model. This is useful for 2 cases:
-
-        - Resuming training with the most recent model checkpoint.
-        - Loading the best validation model to evaluate on the test data.
-
-        Params
-        ------
-        - best: if set to True, loads the best model. Use this if you want
-          to evaluate your model on the test data. Else, set to False in
-          which case the most recent version of the checkpoint is used.
-        """
-        print("[*] Loading model from {}".format(self.ckpt_dir))
-
-        filename = self.model_name + '_ckpt.pth.tar'
-        if best:
-            filename = self.model_name + '_model_best.pth.tar'
-        print(filename)
-        ckpt_path = os.path.join(self.ckpt_dir, filename)
-        ckpt = torch.load(ckpt_path)
-
-        # load variables from checkpoint
-        self.start_epoch = ckpt['epoch']
-        self.best_valid_acc = ckpt['best_valid_acc']
-        self.model.load_state_dict(ckpt['model_state'])
-        self.optimizer.load_state_dict(ckpt['optim_state'])
-
-        if best:
-            print(
-                "[*] Loaded {} checkpoint @ epoch {} "
-                "with best valid acc of {:.3f}".format(
-                    filename, ckpt['epoch'], ckpt['best_valid_acc'])
-            )
-        else:
-            print(
-                "[*] Loaded {} checkpoint @ epoch {}".format(
-                    filename, ckpt['epoch'])
-            )
-
 
